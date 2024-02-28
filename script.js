@@ -5,6 +5,17 @@ const TRAIL_COLOR = "#008800";
 const TRAIL_MARK_SIZE = 10;
 const FAST_SPEED = 10;
 const SLOW_SPEED = 5;
+const MOBILE_SCALE = 0.75;
+
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+let isMobile = false;
+if (window.innerWidth <= 800 && window.innerHeight <= 600) {
+    canvas.width *= MOBILE_SCALE;
+    canvas.height *= MOBILE_SCALE;
+    isMobile = true;
+}
 
 // Modify this to change the behavior of the robots
 const STEPS = [
@@ -88,9 +99,6 @@ const STEPS = [
     }
 ];
 
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-
 const img = new Image();
 img.src = "field.png";
 
@@ -112,17 +120,18 @@ function mainloop() {
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
     let robotTargetPositions = getRobotTargets();
     let labelText = getLabelText();
+    let scale = isMobile ? MOBILE_SCALE : 1;
     for (let robot of ["fast", "slow1", "slow2"]) {
         ctx.strokeStyle = TRAIL_COLOR;
         ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.moveTo(robotPositions[robot].x, robotPositions[robot].y);
-        ctx.lineTo(robotTargetPositions[robot].x, robotTargetPositions[robot].y);
+        ctx.moveTo(robotPositions[robot].x * scale, robotPositions[robot].y * scale);
+        ctx.lineTo(robotTargetPositions[robot].x * scale, robotTargetPositions[robot].y * scale);
         ctx.stroke();
         for (let i of [-1, 1]) {
             ctx.beginPath();
-            ctx.moveTo(robotTargetPositions[robot].x - TRAIL_MARK_SIZE / 2 * i, robotTargetPositions[robot].y - TRAIL_MARK_SIZE / 2);
-            ctx.lineTo(robotTargetPositions[robot].x + TRAIL_MARK_SIZE / 2 * i, robotTargetPositions[robot].y + TRAIL_MARK_SIZE / 2);
+            ctx.moveTo((robotTargetPositions[robot].x - TRAIL_MARK_SIZE / 2 * i) * scale, (robotTargetPositions[robot].y - TRAIL_MARK_SIZE / 2) * scale);
+            ctx.lineTo((robotTargetPositions[robot].x + TRAIL_MARK_SIZE / 2 * i) * scale, (robotTargetPositions[robot].y + TRAIL_MARK_SIZE / 2) * scale);
             ctx.stroke();
         }
         let isFast = robot === "fast";
@@ -139,16 +148,16 @@ function mainloop() {
         }
         ctx.fillStyle = isFast ? FAST_COLOR : SLOW_COLOR;
         ctx.beginPath();
-        ctx.ellipse(robotPositions[robot].x, robotPositions[robot].y, ROBOT_RADIUS, ROBOT_RADIUS, 0, 0, 2 * Math.PI);
+        ctx.ellipse(robotPositions[robot].x * scale, robotPositions[robot].y * scale, ROBOT_RADIUS * scale, ROBOT_RADIUS * scale, 0, 0, 2 * Math.PI);
         ctx.fill();
     }
-    ctx.font = "30px Courier New";
+    ctx.font = `${Math.floor(30 * scale)}px Courier New`;
     ctx.fillStyle = "#000000";
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
     let lines = labelText.split("\n");
     for (let i = 0; i < lines.length; i++) {
-        ctx.fillText(lines[i], canvas.width / 2, 30 * i);
+        ctx.fillText(lines[i], canvas.width / 2, Math.floor(30 * scale) * i);
     }
     ctx.fillStyle = "#444444";
     for (let isRight of [false, true]) {
@@ -156,21 +165,22 @@ function mainloop() {
         if (step === STEPS.length - 1 && isRight) continue;
         const c = x => isRight ? canvas.width - x : x;
         ctx.beginPath();
-        ctx.moveTo(c(50), 50);
-        ctx.lineTo(c(100), 25);
-        ctx.lineTo(c(100), 75);
+        ctx.moveTo(c(50 * scale), 50 * scale);
+        ctx.lineTo(c(100 * scale), 25 * scale);
+        ctx.lineTo(c(100 * scale), 75 * scale);
         ctx.closePath();
         ctx.fill();
     }
 }
 
 canvas.addEventListener("click", e => {
+    let scale = isMobile ? MOBILE_SCALE : 1;
     let rect = canvas.getBoundingClientRect();
     let x = e.clientX - rect.left;
     let y = e.clientY - rect.top;
-    if (Math.abs(y - 50) < 25) {
-        if (Math.abs(x - 75) < 25) step--;
-        if (Math.abs(x - (canvas.width - 75)) < 25) step++;
+    if (Math.abs(y - 50 * scale) < 25 * scale) {
+        if (Math.abs(x - 75 * scale) < 25 * scale) step--;
+        if (Math.abs(x - (canvas.width - 75 * scale)) < 25 * scale) step++;
         step = Math.min(Math.max(step, 0), STEPS.length - 1);
     } else {
         console.table({x, y});
